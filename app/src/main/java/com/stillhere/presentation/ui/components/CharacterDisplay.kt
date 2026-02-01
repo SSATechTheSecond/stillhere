@@ -30,6 +30,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.DrawScope
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.IntOffset
@@ -37,16 +38,18 @@ import androidx.compose.ui.unit.dp
 import com.stillhere.domain.model.EchoAnimationState
 import com.stillhere.domain.model.EchoMood
 import com.stillhere.domain.model.TouchReaction
+import com.stillhere.domain.model.animation.CameraState
 import kotlin.math.roundToInt
 
 /**
  * Animated Echo character display.
- * A living, breathing companion character.
+ * A living, breathing companion character with autonomous camera behavior.
  */
 @Composable
 fun CharacterDisplay(
     mood: EchoMood,
     animationState: EchoAnimationState,
+    cameraState: CameraState = CameraState(),
     onTouch: (TouchReaction) -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -100,6 +103,14 @@ fun CharacterDisplay(
             .size(200.dp)
             .offset { IntOffset(0, with(density) { yOffset.roundToInt() }) }
             .scale(scale)
+            .graphicsLayer {
+                // Apply camera transformations
+                scaleX = cameraState.zoom
+                scaleY = cameraState.zoom
+                translationX = cameraState.panX * 100f
+                translationY = cameraState.panY * 100f
+                rotationZ = cameraState.tilt
+            }
             .pointerInput(Unit) {
                 detectTapGestures(
                     onPress = {
@@ -115,7 +126,8 @@ fun CharacterDisplay(
     ) {
         EchoCharacter(
             mood = mood,
-            animationState = animationState
+            animationState = animationState,
+            cameraState = cameraState
         )
     }
 }
@@ -123,7 +135,8 @@ fun CharacterDisplay(
 @Composable
 private fun EchoCharacter(
     mood: EchoMood,
-    animationState: EchoAnimationState
+    animationState: EchoAnimationState,
+    cameraState: CameraState
 ) {
     val infiniteTransition = rememberInfiniteTransition(label = "blink")
     
@@ -160,6 +173,11 @@ private fun EchoCharacter(
             .fillMaxSize()
             .shadow(8.dp, CircleShape)
             .clip(CircleShape)
+            .graphicsLayer {
+                // Apply head rotation from camera state
+                rotationX = cameraState.headRotationX * 30f  // Scale for visual effect
+                rotationY = cameraState.headRotationY * 30f
+            }
             .background(
                 brush = Brush.radialGradient(
                     colors = listOf(
@@ -179,8 +197,8 @@ private fun EchoCharacter(
             center = Offset(centerX, centerY)
         )
 
-        // Draw eyes
-        drawEyes(centerX, centerY, mood, eyeOpenness)
+        // Draw eyes with camera-controlled eye position
+        drawEyes(centerX, centerY, mood, eyeOpenness, cameraState)
 
         // Draw blush for certain moods
         if (mood in listOf(EchoMood.HAPPY, EchoMood.LOVING, EchoMood.PLAYFUL, EchoMood.EMBARRASSED)) {
@@ -205,11 +223,16 @@ private fun DrawScope.drawEyes(
     centerX: Float,
     centerY: Float,
     mood: EchoMood,
-    openness: Float
+    openness: Float,
+    cameraState: CameraState
 ) {
     val eyeRadius = size.minDimension / 20f
     val eyeY = centerY - size.height / 12
     val eyeSpacing = size.width / 6
+
+    // Apply camera-controlled eye offset
+    val eyeOffsetX = cameraState.eyeX * (size.width / 8)
+    val eyeOffsetY = cameraState.eyeY * (size.height / 8)
 
     val eyeColor = when (mood) {
         EchoMood.SAD -> Color(0xFF4A90D9)
@@ -219,18 +242,18 @@ private fun DrawScope.drawEyes(
         else -> Color(0xFF7B68EE)  // Purple for Echo
     }
 
-    // Eye whites
-    drawCircle(Color.White, eyeRadius * 1.5f * openness, Offset(centerX - eyeSpacing, eyeY))
-    drawCircle(Color.White, eyeRadius * 1.5f * openness, Offset(centerX + eyeSpacing, eyeY))
+    // Eye whites with camera offset
+    drawCircle(Color.White, eyeRadius * 1.5f * openness, Offset(centerX - eyeSpacing + eyeOffsetX, eyeY + eyeOffsetY))
+    drawCircle(Color.White, eyeRadius * 1.5f * openness, Offset(centerX + eyeSpacing + eyeOffsetX, eyeY + eyeOffsetY))
 
-    // Irises
-    drawCircle(eyeColor, eyeRadius * openness, Offset(centerX - eyeSpacing, eyeY))
-    drawCircle(eyeColor, eyeRadius * openness, Offset(centerX + eyeSpacing, eyeY))
+    // Irises with camera offset
+    drawCircle(eyeColor, eyeRadius * openness, Offset(centerX - eyeSpacing + eyeOffsetX, eyeY + eyeOffsetY))
+    drawCircle(eyeColor, eyeRadius * openness, Offset(centerX + eyeSpacing + eyeOffsetX, eyeY + eyeOffsetY))
 
-    // Pupils
+    // Pupils with camera offset
     val pupilRadius = eyeRadius / 2
-    drawCircle(Color.Black, pupilRadius * openness, Offset(centerX - eyeSpacing, eyeY))
-    drawCircle(Color.Black, pupilRadius * openness, Offset(centerX + eyeSpacing, eyeY))
+    drawCircle(Color.Black, pupilRadius * openness, Offset(centerX - eyeSpacing + eyeOffsetX, eyeY + eyeOffsetY))
+    drawCircle(Color.Black, pupilRadius * openness, Offset(centerX + eyeSpacing + eyeOffsetX, eyeY + eyeOffsetY))
 }
 
 private fun DrawScope.drawMouth(
