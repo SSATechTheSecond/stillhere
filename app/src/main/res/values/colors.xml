@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Primary brand colors -->
+    <color name="purple_200">#FFBB86FC</color>
+    <color name="purple_500">#FF6200EE</color>
+    <color name="purple_700">#FF3700B3</color>
+    
+    <!-- Echo character colors -->
+    <color name="echo_purple">#FF7B68EE</color>
+    <color name="echo_pink">#FFFF69B4</color>
+    <color name="echo_blue">#FF87CEEB</color>
+    
+    <!-- Background colors -->
+    <color name="black">#FF000000</color>
+    <color name="white">#FFFFFFFF</color>
+    
+    <!-- Light theme -->
+    <color name="light_background">#FFF5F5F5</color>
+    <color name="light_surface">#FFFFFFFF</color>
+    
+    <!-- Dark theme -->
+    <color name="dark_background">#FF121212</color>
+    <color name="dark_surface">#FF1E1E1E</color>
+</resources>
